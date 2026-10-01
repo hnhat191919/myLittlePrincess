@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vũ Trụ Tình Cảm</title>
+<style>
+  :root{
+    --pink-1:#ff2e88;
+    --pink-2:#ff8fce;
+    --bg-deep:#050007;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    height:100%;
+    margin:0;
+    background:var(--bg-deep);
+    overflow:hidden;
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+    color:#fff;
+  }
+  #app{
+    position:relative;
+    width:100%;
+    height:100vh;
+    height:100dvh;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    overflow:hidden;
+  }
+  .screen{
+    position:absolute;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+  }
+  .screen.active{ display:flex; }
+
+  #intro{
+    flex-direction:column;
+    text-align:center;
+    padding:8vh 6vw;
+    background:
+      radial-gradient(circle at 50% 20%, rgba(255,46,136,0.35), transparent 60%),
+      linear-gradient(180deg,#1a0010,#050007);
+  }
+  #intro h1{
+    font-size:clamp(24px,6vw,38px);
+    margin:0 0 10px;
+    font-weight:700;
+    text-shadow:0 0 18px rgba(255,46,136,0.6);
+  }
+  #intro .art{
+    font-size:64px;
+    margin:18px 0;
+    filter:drop-shadow(0 0 18px rgba(255,120,180,0.7));
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ transform:scale(1); }
+    50%{ transform:scale(1.08); }
+  }
+  #intro p.tagline{
+    color:#ffd9ec;
+    font-size:14px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    margin:6px 0 24px;
+  }
+  #nameField{
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,143,206,0.45);
+    color:#fff;
+    font-size:18px;
+    text-align:center;
+    padding:10px 16px;
+    border-radius:999px;
+    outline:none;
+    width:min(320px,80vw);
+    margin-bottom:22px;
+  }
+  #nameField::placeholder{ color:rgba(255,255,255,0.5); }
+  .btn{
+    border:none;
+    cursor:pointer;
+    border-radius:999px;
+    padding:14px 30px;
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:0.5px;
+    color:#fff;
+    background:linear-gradient(135deg,var(--pink-1),#c2126b);
+    box-shadow:0 8px 24px rgba(255,46,136,0.45);
+  }
+  .btn:active{ transform:scale(0.97); }
+
+  /* ---------- Lock / Passcode screen ---------- */
+  #lock{
+    flex-direction:column;
+    text-align:center;
+    padding:6vh 6vw;
+    background:
+      radial-gradient(circle at 50% 15%, rgba(255,46,136,0.25), transparent 60%),
+      linear-gradient(180deg,#0d0009,#050007);
+  }
+  .lock-icon{
+    font-size:32px;
+    margin-bottom:8px;
+    filter:drop-shadow(0 0 10px rgba(255,90,170,0.6));
+  }
+  .lock-title{
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:1px;
+    color:#ffd9ec;
+    margin:0 0 20px;
+  }
+  .dots{
+    display:flex;
+    gap:14px;
+    justify-content:center;
+    margin-bottom:10px;
+  }
+  .dot{
+    width:12px;height:12px;border-radius:50%;
+    border:1.5px solid rgba(255,143,206,0.6);
+    background:transparent;
+    transition:background .15s;
+  }
+  .dot.filled{ background:#ff2e88; border-color:#ff2e88; box-shadow:0 0 8px rgba(255,46,136,0.8); }
+  .lock-error{
+    color:#ff6b9d;
+    font-size:12px;
+    height:16px;
+    margin-bottom:14px;
+    opacity:0;
+    transition:opacity .2s;
+  }
+  .lock-error.show{ opacity:1; }
+  .dots.shake{ animation:shake .4s; }
+  @keyframes shake{
+    0%,100%{ transform:translateX(0); }
+    20%{ transform:translateX(-10px); }
+    40%{ transform:translateX(10px); }
+    60%{ transform:translateX(-6px); }
+    80%{ transform:translateX(6px); }
+  }
+  .keypad{
+    display:grid;
+    grid-template-columns:repeat(3, clamp(56px,17vw,72px));
+    gap:clamp(10px,3vw,16px);
+    justify-content:center;
+    margin:8px 0 20px;
+  }
+  .key{
+    width:clamp(56px,17vw,72px);
+    height:clamp(56px,17vw,72px);
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,0.15);
+    background:rgba(255,255,255,0.06);
+    color:#fff;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .key:active{ background:rgba(255,46,136,0.35); }
+  .key .num{ font-size:22px; font-weight:500; line-height:1; }
+  .key .letters{ font-size:9px; letter-spacing:1px; color:rgba(255,255,255,0.55); margin-top:2px; }
+  .key.empty{ visibility:hidden; cursor:default; }
+  .key.action{ background:transparent; border:none; font-size:20px; color:#ffd9ec; }
+  .hint-btn{
+    background:none; border:none; color:rgba(255,217,236,0.75);
+    font-size:13px; letter-spacing:0.5px; cursor:pointer; text-decoration:underline;
+  }
+  .hint-toast{
+    position:absolute;
+    bottom:calc(6% + env(safe-area-inset-bottom,0px));
+    left:50%; transform:translateX(-50%) translateY(20px);
+    background:rgba(30,4,18,0.95);
+    border:1px solid rgba(255,143,206,0.4);
+    padding:12px 18px;
+    border-radius:14px;
+    font-size:13px;
+    max-width:82vw;
+    text-align:center;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s, transform .25s;
+    z-index:30;
+  }
+  .hint-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ---------- Galaxy scene ---------- */
+  #galaxy{ position:absolute; inset:0; }
+  #canvas{ position:absolute; top:0; left:0; width:100%; height:100%; display:block; z-index:0; }
+  .heart-stage{
+    position:absolute;
+    top:9%;
+    left:50%;
+    width:min(78vw, 380px);
+    height:min(78vw, 380px);
+    z-index:3;
+    pointer-events:none;
+    animation: heartbeatScale 1.3s infinite;
+  }
+  #pinkboard{ width:100%; height:100%; display:block; }
+  @keyframes heartbeatScale{
+    0%{ transform:translateX(-50%) scale(1); }
+    30%{ transform:translateX(-50%) scale(.82); }
+    60%{ transform:translateX(-50%) scale(1.16); }
+    100%{ transform:translateX(-50%) scale(1); }
+  }
+  .caption-top{
+    position:absolute;
+    top:calc(4% + env(safe-area-inset-top,0px));
+    left:50%;
+    transform:translateX(-50%);
+    font-size:clamp(16px,4.5vw,24px);
+    font-weight:700;
+    text-align:center;
+    text-shadow:0 0 14px rgba(255,46,136,0.9);
+    z-index:5;
+    white-space:nowrap;
+  }
+  .hint{
+    position:absolute;
+    bottom:calc(4% + env(safe-area-inset-bottom,0px));
+    left:50%;
+    transform:translateX(-50%);
+    font-size:12px;
+    letter-spacing:1px;
+    color:rgba(255,255,255,0.7);
+    z-index:5;
+    text-align:center;
+  }
+  .wish{
+    position:absolute;
+    color:#ffd9ec;
+    font-weight:600;
+    white-space:nowrap;
+    text-shadow:0 0 10px rgba(255,46,136,0.9), 0 0 22px rgba(255,46,136,0.5);
+    opacity:0;
+    pointer-events:none;
+    z-index:4;
+  }
+  .note-bubble{
+    position:absolute;
+    z-index:6;
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    border:none;
+    background:rgba(255,255,255,0.12);
+    backdrop-filter:blur(3px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    cursor:pointer;
+    animation:floaty 3s ease-in-out infinite;
+    box-shadow:0 0 16px rgba(255,90,170,0.6);
+  }
+  @keyframes floaty{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-8px); }
+  }
+
+  /* ---------- Card overlay ---------- */
+  #cardOverlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,0.75);
+    backdrop-filter:blur(2px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:20;
+    padding:6vw;
+  }
+  #cardOverlay.active{ display:flex; }
+  .card{
+    background:linear-gradient(180deg,#1c0212,#0a0007);
+    border:1px solid rgba(255,143,206,0.3);
+    border-radius:22px;
+    padding:28px 22px;
+    max-width:360px;
+    width:100%;
+    text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,0.6);
+  }
+  .card .card-art{
+    font-size:48px;
+    margin-bottom:6px;
+    filter:drop-shadow(0 0 14px rgba(255,120,180,0.7));
+  }
+  .card h2{
+    margin:6px 0 10px;
+    font-size:22px;
+  }
+  .card p{
+    font-size:14px;
+    line-height:1.6;
+    color:#f4dced;
+    margin:0 0 20px;
+  }
+  .card button{
+    background:transparent;
+    border:1px solid rgba(255,143,206,0.5);
+    color:#ffd9ec;
+    padding:10px 22px;
+    border-radius:999px;
+    font-size:13px;
+    letter-spacing:1px;
+    cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- INTRO -->
+  <div id="intro" class="screen active">
+    <p class="tagline">Một món quà nhỏ dành cho</p>
+    <h1 style="margin-top:0;">Mai Phương</h1>
+    <div class="art">💫💖</div>
+    <h1>Một Vũ Trụ Tình Cảm<br>Dành Cho Em</h1>
+    <p class="tagline">Chúc mừng sinh nhật</p>
+    <button class="btn" id="enterBtn">Bước Vào Vũ Trụ</button>
+  </div>
+
+  <!-- LOCK SCREEN -->
+  <div id="lock" class="screen">
+    <div class="lock-icon">🔒</div>
+    <h2 class="lock-title">NHẬP MẬT KHẨU ĐỂ XÁC MINH LÀ MAI PHƯƠNG THẬT</h2>
+    <div class="dots" id="dots">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    </div>
+    <div class="lock-error" id="lockError">Sai mật khẩu, thử lại</div>
+    <div class="keypad" id="keypad">
+      <button class="key" data-d="1"><span class="num">1</span></button>
+      <button class="key" data-d="2"><span class="num">2</span><span class="letters">ABC</span></button>
+      <button class="key" data-d="3"><span class="num">3</span><span class="letters">DEF</span></button>
+      <button class="key" data-d="4"><span class="num">4</span><span class="letters">GHI</span></button>
+      <button class="key" data-d="5"><span class="num">5</span><span class="letters">JKL</span></button>
+      <button class="key" data-d="6"><span class="num">6</span><span class="letters">MNO</span></button>
+      <button class="key" data-d="7"><span class="num">7</span><span class="letters">PQRS</span></button>
+      <button class="key" data-d="8"><span class="num">8</span><span class="letters">TUV</span></button>
+      <button class="key" data-d="9"><span class="num">9</span><span class="letters">WXYZ</span></button>
+      <button class="key empty" tabindex="-1"></button>
+      <button class="key" data-d="0"><span class="num">0</span></button>
+      <button class="key action" id="delKey">⌫</button>
+    </div>
+    <button class="hint-btn" id="hintBtn">Gợi ý</button>
+  </div>
+
+  <!-- GALAXY SCENE -->
+  <div id="galaxy" class="screen">
+    <canvas id="canvas"></canvas>
+    <div class="heart-stage"><canvas id="pinkboard"></canvas></div>
+    <div class="caption-top" id="captionTop">Chúc Mừng Sinh Nhật Mai Phương 💕</div>
+    <div class="hint">Chạm vào các 💗 để mở lời nhắn — chạm nền để bắn pháo hoa</div>
+  </div>
+
+  <div class="hint-toast" id="hintToast"></div>
+
+  <!-- CARD OVERLAY -->
+  <div id="cardOverlay">
+    <div class="card">
+      <div class="card-art" id="cardArt">💌</div>
+      <h2 id="cardTitle">Tiêu đề</h2>
+      <p id="cardText">Nội dung lời nhắn.</p>
+      <button id="cardBack">Quay Lại ♥</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ---------------- Screen switching ---------------- */
+const introScreen = document.getElementById('intro');
+const lockScreen = document.getElementById('lock');
+const galaxyScreen = document.getElementById('galaxy');
+let started = false;
+
+document.getElementById('enterBtn').addEventListener('click', () => {
+  introScreen.classList.remove('active');
+  lockScreen.classList.add('active');
+});
+
+/* ---------------- Passcode lock ---------------- */
+const PASSCODE = '010926';
+const HINT_TEXT = 'Mật khẩu là ngày đầu tiên anh chơi với em =))';
+let entered = '';
+const dotsWrap = document.getElementById('dots');
+const lockError = document.getElementById('lockError');
+const hintToast = document.getElementById('hintToast');
+
+function updateDots(){
+  [...dotsWrap.children].forEach((d,i)=> d.classList.toggle('filled', i < entered.length));
+}
+function resetEntry(){
+  entered = '';
+  updateDots();
+}
+
+document.getElementById('keypad').addEventListener('click', (e) => {
+  const btn = e.target.closest('.key');
+  if(!btn || btn.classList.contains('empty')) return;
+
+  if(btn.id === 'delKey'){
+    entered = entered.slice(0,-1);
+    updateDots();
+    return;
+  }
+  if(entered.length >= 6) return;
+
+  entered += btn.dataset.d;
+  updateDots();
+  lockError.classList.remove('show');
+
+  if(entered.length === 6){
+    setTimeout(() => {
+      if(entered === PASSCODE){
+        lockScreen.classList.remove('active');
+        galaxyScreen.classList.add('active');
+        if(!started){ started = true; initGalaxy(); }
+      } else {
+        lockError.classList.add('show');
+        dotsWrap.classList.add('shake');
+        setTimeout(() => { dotsWrap.classList.remove('shake'); resetEntry(); }, 400);
+      }
+    }, 150);
+  }
+});
+
+document.getElementById('hintBtn').addEventListener('click', () => {
+  hintToast.textContent = HINT_TEXT;
+  hintToast.classList.add('show');
+  clearTimeout(window.__hintTimer);
+  window.__hintTimer = setTimeout(() => hintToast.classList.remove('show'), 3500);
+});
+
+/* ---------------- Card data ---------------- */
+const cards = [
+  { emoji:'🌌', title:'Học tập', text:'Chúc Phương đỗ nv1 QHX21 USSH và IELTS 9.0 nhé' },
+  { emoji:'💐', title:'Dành Cho mf', text:'Chúc em mọi thứ tốt đẹp nhất.Tuổi 17 nhiều sức khỏe lạc quan yêu đời lun xinh đẹp nha' },
+  { emoji:'♾️', title:'Mãi Mãi', text:'Dù có bao nhiêu sp chơi với anh nữa em vẫn là s1.Em sẽ không bao giờ kiếm được thằng AD nào nhìn em chơi với thằng khác,nhắn tin với thằng khác mà vẫn chuẩn bị quà sinh nhật cho em như anh đâu.Chúc em sớm lên chiến thần nhé đồ tồi =))' }
+];
+
+const overlay = document.getElementById('cardOverlay');
+const cardArt = document.getElementById('cardArt');
+const cardTitle = document.getElementById('cardTitle');
+const cardText = document.getElementById('cardText');
+
+function openCard(i){
+  const c = cards[i];
+  cardArt.textContent = c.emoji;
+  cardTitle.textContent = c.title;
+  cardText.textContent = c.text;
+  overlay.classList.add('active');
+}
+document.getElementById('cardBack').addEventListener('click', () => {
+  overlay.classList.remove('active');
+});
+
+/* ---------------- Galaxy + heart canvas ---------------- */
+let canvas, ctx, W, H, DPR;
+let stars = [], bursts = [];
+let frame = 0;
+let galaxyInited = false;
+
+function initGalaxy(){
+  canvas = document.getElementById('canvas');
+  ctx = canvas.getContext('2d');
+  resize();
+  window.addEventListener('resize', resize);
+
+  for(let i=0;i<140;i++){
+    stars.push({ x:Math.random(), y:Math.random(), r:Math.random()*1.4+0.2, tw:Math.random()*Math.PI*2, speed:Math.random()*0.02+0.005 });
+  }
+
+  initHeart();
+
+  placeNoteBubbles();
+  layoutWishes();
+  window.addEventListener('resize', () => { placeNoteBubbles(); layoutWishes(); });
+
+  canvas.addEventListener('pointerdown', e => {
+    const rect = canvas.getBoundingClientRect();
+    spawnBurst(e.clientX-rect.left, e.clientY-rect.top);
+  });
+
+  galaxyInited = true;
+  requestAnimationFrame(draw);
+}
+
+function resize(){
+  DPR = Math.min(window.devicePixelRatio||1, 2);
+  W = canvas.clientWidth; H = canvas.clientHeight;
+  canvas.width = W*DPR; canvas.height = H*DPR;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+
+/* ---------------- Beating particle heart (dedicated overlay canvas) ---------------- */
+function initHeart(){
+  const settings = { particles: { length: 600, duration: 2, velocity: 100, effect: -1.3, size: 12 } };
+
+  function Point(x,y){ this.x=x||0; this.y=y||0; }
+  Point.prototype.clone=function(){ return new Point(this.x,this.y); };
+  Point.prototype.length=function(len){
+    if(typeof len==='undefined') return Math.sqrt(this.x*this.x+this.y*this.y);
+    this.normalize(); this.x*=len; this.y*=len; return this;
+  };
+  Point.prototype.normalize=function(){ const l=this.length(); this.x/=l; this.y/=l; return this; };
+
+  function Particle(){ this.position=new Point(); this.velocity=new Point(); this.acceleration=new Point(); this.age=0; }
+  Particle.prototype.initialize=function(x,y,dx,dy){
+    this.position.x=x; this.position.y=y;
+    this.velocity.x=dx; this.velocity.y=dy;
+    this.acceleration.x=dx*settings.particles.effect;
+    this.acceleration.y=dy*settings.particles.effect;
+    this.age=0;
+  };
+  Particle.prototype.update=function(dt){
+    this.position.x+=this.velocity.x*dt; this.position.y+=this.velocity.y*dt;
+    this.velocity.x+=this.acceleration.x*dt; this.velocity.y+=this.acceleration.y*dt;
+    this.age+=dt;
+  };
+  Particle.prototype.draw=function(hctx,img){
+    function ease(t){ return (--t)*t*t+1; }
+    const size=img.width*ease(this.age/settings.particles.duration);
+    hctx.globalAlpha=Math.max(0,1-this.age/settings.particles.duration);
+    hctx.drawImage(img, this.position.x-size/2, this.position.y-size/2, size, size);
+  };
+
+  function ParticlePool(len){
+    this.particles=new Array(len);
+    this.firstActive=0; this.firstFree=0;
+    for(let i=0;i<len;i++) this.particles[i]=new Particle();
+  }
+  ParticlePool.prototype.add=function(x,y,dx,dy){
+    this.particles[this.firstFree].initialize(x,y,dx,dy);
+    this.firstFree++;
+    if(this.firstFree===this.particles.length) this.firstFree=0;
+    if(this.firstActive===this.firstFree) this.firstActive++;
+    if(this.firstActive===this.particles.length) this.firstActive=0;
+  };
+  ParticlePool.prototype.update=function(dt){
+    let i;
+    if(this.firstActive<this.firstFree){ for(i=this.firstActive;i<this.firstFree;i++) this.particles[i].update(dt); }
+    if(this.firstFree<this.firstActive){
+      for(i=this.firstActive;i<this.particles.length;i++) this.particles[i].update(dt);
+      for(i=0;i<this.firstFree;i++) this.particles[i].update(dt);
+    }
+    while(this.particles[this.firstActive].age>=settings.particles.duration && this.firstActive!==this.firstFree){
+      this.firstActive++;
+      if(this.firstActive===this.particles.length) this.firstActive=0;
+    }
+  };
+  ParticlePool.prototype.draw=function(hctx,img){
+    let i;
+    if(this.firstActive<this.firstFree){ for(i=this.firstActive;i<this.firstFree;i++) this.particles[i].draw(hctx,img); }
+    if(this.firstFree<this.firstActive){
+      for(i=this.firstActive;i<this.particles.length;i++) this.particles[i].draw(hctx,img);
+      for(i=0;i<this.firstFree;i++) this.particles[i].draw(hctx,img);
+    }
+  };
+
+  const heartCanvas = document.getElementById('pinkboard');
+  const hctx = heartCanvas.getContext('2d');
+  const pool = new ParticlePool(settings.particles.length);
+  const particleRate = settings.particles.length/settings.particles.duration;
+  let heartTime, heartScale = 1;
+
+  function pointOnHeart(t){
+    return new Point(
+      160*Math.pow(Math.sin(t),3),
+      130*Math.cos(t) - 50*Math.cos(2*t) - 20*Math.cos(3*t) - 10*Math.cos(4*t) + 25
+    );
+  }
+
+  const heartImage = (function(){
+    const c = document.createElement('canvas'), cctx = c.getContext('2d');
+    c.width = settings.particles.size; c.height = settings.particles.size;
+    function to(t){
+      const p = pointOnHeart(t);
+      p.x = settings.particles.size/2 + p.x*settings.particles.size/350;
+      p.y = settings.particles.size/2 - p.y*settings.particles.size/350;
+      return p;
+    }
+    cctx.beginPath();
+    let t=-Math.PI, p=to(t);
+    cctx.moveTo(p.x,p.y);
+    while(t<Math.PI){ t+=0.01; p=to(t); cctx.lineTo(p.x,p.y); }
+    cctx.closePath();
+    cctx.fillStyle = '#ff2e88';
+    cctx.fill();
+    const img = new Image();
+    img.src = c.toDataURL();
+    return img;
+  })();
+
+  function heartResize(){
+    heartCanvas.width = heartCanvas.clientWidth;
+    heartCanvas.height = heartCanvas.clientHeight;
+    heartScale = Math.min(heartCanvas.width, heartCanvas.height)/380;
+  }
+  window.addEventListener('resize', heartResize);
+  heartResize();
+
+  function heartRender(){
+    requestAnimationFrame(heartRender);
+    const newTime = Date.now()/1000;
+    const dt = newTime - (heartTime||newTime);
+    heartTime = newTime;
+
+    hctx.clearRect(0,0,heartCanvas.width, heartCanvas.height);
+
+    const amount = particleRate*dt;
+    for(let i=0;i<amount;i++){
+      const pos = pointOnHeart(Math.PI - 2*Math.PI*Math.random());
+      const dir = pos.clone().length(settings.particles.velocity);
+      pool.add(
+        heartCanvas.width/2 + pos.x*heartScale,
+        heartCanvas.height/2 - pos.y*heartScale,
+        dir.x, -dir.y
+      );
+    }
+    pool.update(dt);
+    pool.draw(hctx, heartImage);
+    hctx.globalAlpha = 1;
+  }
+  heartRender();
+}
+
+/* Spiral galaxy disc particles */
+const DISC_COUNT = 500;
+let discParticles = [];
+function seedDisc(){
+  discParticles = [];
+  for(let i=0;i<DISC_COUNT;i++){
+    discParticles.push({
+      r: Math.random(),
+      a: Math.random()*Math.PI*2,
+      speed: 0.15 + Math.random()*0.25,
+      size: Math.random()*1.6+0.4,
+      hue: 320 + Math.random()*30
+    });
+  }
+}
+seedDisc();
+
+function drawDisc(cx, cy, maxR){
+  discParticles.forEach(p => {
+    const angle = p.a + frame*0.0009*p.speed + p.r*3.2;
+    const rad = p.r*maxR;
+    const x = cx + Math.cos(angle)*rad;
+    const y = cy + Math.sin(angle)*rad*0.34;
+    const alpha = 0.15 + (1-p.r)*0.5;
+    ctx.beginPath();
+    ctx.fillStyle = `hsla(${p.hue},100%,70%,${alpha})`;
+    ctx.arc(x,y,p.size,0,Math.PI*2);
+    ctx.fill();
+  });
+}
+
+/* Note bubbles positioned around the disc */
+function placeNoteBubbles(){
+  document.querySelectorAll('.note-bubble').forEach(el=>el.remove());
+  const cx = W/2, cy = H*0.66;
+  const rx = W*0.36, ry = H*0.12;
+  cards.forEach((c,i) => {
+    const angle = (i/cards.length)*Math.PI*2 - Math.PI/2 + 0.6;
+    const x = cx + Math.cos(angle)*rx;
+    const y = cy + Math.sin(angle)*ry;
+    const btn = document.createElement('button');
+    btn.className = 'note-bubble';
+    btn.textContent = '💗';
+    btn.style.left = Math.max(6,Math.min(W-46,x)) + 'px';
+    btn.style.top = Math.max(6,Math.min(H-46,y)) + 'px';
+    btn.style.animationDelay = (i*0.4)+'s';
+    btn.addEventListener('click', (e)=>{ e.stopPropagation(); openCard(i); });
+    galaxyScreen.appendChild(btn);
+  });
+}
+
+/* Floating wish texts around the disc */
+const wishTexts = [
+  "HAPPY BIRTHDAY","LUÔN VUI VẺ","HẠNH PHÚC","LUÔN XINH ĐẸP","NHIỀU SỨC KHỎE ∞","ĐỂ Ý ANH 1 TÍ ĐI ĐỒ TỒI =(("
+];
+let wishEls = [];
+function layoutWishes(){
+  wishEls.forEach(el=>el.remove());
+  wishEls = [];
+  const cx = W/2, cy = H*0.66;
+  const rx = W*0.44, ry = H*0.15;
+  wishTexts.forEach((t,i) => {
+    const el = document.createElement('div');
+    el.className = 'wish';
+    el.textContent = t;
+    const angle = (i/wishTexts.length)*Math.PI*2 - Math.PI/2;
+    const x = cx + Math.cos(angle)*rx - t.length*3;
+    const y = cy + Math.sin(angle)*ry;
+    el.style.left = Math.max(2,Math.min(W-10,x))+'px';
+    el.style.top = Math.max(2,Math.min(H-10,y))+'px';
+    el.style.fontSize = (window.innerWidth<480?10:13)+'px';
+    el.dataset.delay = (i*0.7).toFixed(2);
+    galaxyScreen.appendChild(el);
+    wishEls.push(el);
+  });
+}
+
+function spawnBurst(x,y){
+  for(let i=0;i<36;i++){
+    const angle = Math.random()*Math.PI*2;
+    const speed = Math.random()*2.4+0.5;
+    bursts.push({ x,y, vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed, life:1, size:Math.random()*2+1 });
+  }
+}
+
+function draw(){
+  if(!galaxyInited) return;
+  frame++;
+  ctx.clearRect(0,0,W,H);
+
+  const grad = ctx.createRadialGradient(W/2,H*0.6,10,W/2,H*0.6,Math.max(W,H)*0.8);
+  grad.addColorStop(0,'#2a0018');
+  grad.addColorStop(0.55,'#12000c');
+  grad.addColorStop(1,'#050007');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,W,H);
+
+  stars.forEach(s=>{
+    s.tw += s.speed;
+    const alpha = 0.4+Math.sin(s.tw)*0.4;
+    ctx.fillStyle = `rgba(255,220,240,${Math.max(0,alpha)})`;
+    ctx.beginPath(); ctx.arc(s.x*W, s.y*H, s.r, 0, Math.PI*2); ctx.fill();
+  });
+
+  const discCx = W/2, discCy = H*0.66, discR = Math.min(W,H)*0.5;
+  drawDisc(discCx, discCy, discR);
+
+  const core = ctx.createRadialGradient(discCx,discCy,0,discCx,discCy,26);
+  core.addColorStop(0,'rgba(255,255,255,0.9)');
+  core.addColorStop(0.3,'rgba(255,90,170,0.6)');
+  core.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle = core;
+  ctx.beginPath(); ctx.arc(discCx,discCy,26,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#050007';
+  ctx.beginPath(); ctx.arc(discCx,discCy,7,0,Math.PI*2); ctx.fill();
+
+  // heart is now drawn by the dedicated #pinkboard overlay canvas
+
+  bursts.forEach(b=>{
+    b.x+=b.vx; b.y+=b.vy; b.life-=0.02;
+    if(b.life>0){
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255,200,230,${b.life})`;
+      ctx.arc(b.x,b.y,b.size,0,Math.PI*2);
+      ctx.fill();
+    }
+  });
+  bursts = bursts.filter(b=>b.life>0);
+
+  const cycle = (frame*0.007) % (wishEls.length+3);
+  wishEls.forEach((el,i)=>{
+    const d = parseFloat(el.dataset.delay);
+    const local = (cycle-d+wishEls.length+3)%(wishEls.length+3);
+    let op=0;
+    if(local<1) op=local;
+    else if(local<2.2) op=1;
+    else if(local<3.2) op=1-(local-2.2);
+    el.style.opacity = Math.max(0,Math.min(1,op));
+  });
+
+  requestAnimationFrame(draw);
+}
+</script>
+</body>
+</html>
